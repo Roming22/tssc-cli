@@ -1,0 +1,39 @@
+{{- $secureSign := .Values.trustedArtifactSigner.secureSign -}}
+{{- if $secureSign.enabled }}
+---
+  {{- $keycloak := .Values.trustedArtifactSigner.keycloakRealmImport -}}
+{{- include "common.test" . }}
+  containers:
+    - name: statefulsets-test
+      image: registry.redhat.io/openshift4/ose-tools-rhel9
+      env:
+        - name: NAMESPACE
+          value: {{ $secureSign.namespace }}
+        - name: RESOURCE_TYPE
+          value: "deployment"
+      command:
+        - /scripts/test-rollout-status.sh
+      args:
+        - {{ printf "app.kubernetes.io/instance=%s"  $secureSign.name }}
+      volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      securityContext:
+        allowPrivilegeEscalation: false
+  {{- if $keycloak.enabled }}
+    - name: realm-test
+      image: registry.redhat.io/openshift4/ose-tools-rhel9
+      env:
+        - name: NAMESPACE
+          value: {{ $keycloak.keycloakCR.namespace }}
+      command:
+        - /scripts/test-keycloakrealmimport.sh
+      args:
+        - "trusted-artifact-signer"
+      volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      securityContext:
+        allowPrivilegeEscalation: false
+  {{- end }}
+{{- end }}
