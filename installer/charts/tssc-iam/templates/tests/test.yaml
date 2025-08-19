@@ -1,0 +1,29 @@
+{{- if .Values.iam.enabled -}}
+---
+{{- include "common.test" . }}
+  containers:
+    #
+    # Tests the Keycloak rollout status.
+    #
+  {{- $keycloak := .Values.iam }}
+  {{- $keycloakName := include "iam.name" . }}
+    - name: {{ printf "keycloak-%s" $keycloakName }}
+      image: registry.redhat.io/openshift4/ose-tools-rhel9
+      env:
+        - name: NAMESPACE
+          value: {{ $keycloak.namespace }}
+        - name: RESOURCE_TYPE
+          value: "statefulset"
+      command:
+        - /scripts/test-rollout-status.sh
+      args:
+        - {{
+            printf "app=keycloak,app.kubernetes.io/instance=%s"
+              $keycloakName | quote
+          }}
+      volumeMounts:
+        - name: scripts
+          mountPath: /scripts
+      securityContext:
+        allowPrivilegeEscalation: false
+{{- end }}
