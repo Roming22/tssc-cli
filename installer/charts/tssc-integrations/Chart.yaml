@@ -5,4 +5,5 @@ description: TSSC Integrations
 type: application
 version: "1.7.0"
 annotations:
-  tssc.redhat-appstudio.github.com/depends-on: tssc-acs, tssc-gitops, tssc-dh
+  tssc.redhat-appstudio.github.com/product-name: ("OpenShift GitOps" || "Advanced Cluster Security")
+  tssc.redhat-appstudio.github.com/integration/requires: acs, gitops, (artifactory || nexus || quay), (bitbucket, github, gitlab)

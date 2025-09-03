@@ -4,3 +4,5 @@ name: tssc-subscriptions
 description: TSSC OpenShift Operator Hub Subscriptions
 type: application
 version: "1.7.0"
+annotations:
+  tssc.redhat-appstudio.github.com/depends-on: tssc-openshift

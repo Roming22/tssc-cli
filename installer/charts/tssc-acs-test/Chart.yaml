@@ -6,5 +6,6 @@ type: application
 version: "1.7.0"
 appVersion: "4.8"
 annotations:
-  tssc.redhat-appstudio.github.com/use-product-namespace: Advanced Cluster Security
+  tssc.redhat-appstudio.github.com/product-name: Advanced Cluster Security
   tssc.redhat-appstudio.github.com/depends-on: tssc-acs
+  tssc.redhat-appstudio.github.com/weight: -1
