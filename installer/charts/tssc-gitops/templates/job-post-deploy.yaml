@@ -36,7 +36,7 @@ spec:
         # file which is later stored as a Kubernetes secret.
         #
         - name: argocd-generate-token
-          image: registry.redhat.io/openshift-gitops-1/argocd-rhel8@sha256:5bfc4686983f9c62107772d99d900efbcc38175afe621c40958035aa49bfa9ed
+          image: registry.redhat.io/openshift-gitops-1/argocd-rhel8:1.18
           env:
             - name: ARGOCD_HOSTNAME
               value: {{ include "argoCD.serverHostname" . }}
@@ -68,7 +68,7 @@ spec:
         # on a environment file.
         #
         - name: argocd-store-token
-          image: registry.redhat.io/openshift4/ose-tools-rhel9
+          image: registry.redhat.io/openshift4/ose-tools-rhel9:v4.19
           env:
             - name: SECRET_NAME
               value: {{ $argoCD.integrationSecret.name }}

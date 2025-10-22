@@ -8,7 +8,7 @@
   {{- $keycloak := .Values.iam }}
   {{- $keycloakName := include "iam.name" . }}
     - name: {{ printf "keycloak-%s" $keycloakName }}
-      image: registry.redhat.io/openshift4/ose-tools-rhel9
+      image: registry.redhat.io/openshift4/ose-tools-rhel9:v4.19
       env:
         - name: NAMESPACE
           value: {{ $keycloak.namespace }}
