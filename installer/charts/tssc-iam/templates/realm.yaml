@@ -1,39 +1,57 @@
-{{- $keycloak := .Values.trustedArtifactSigner.keycloakRealmImport -}}
-{{- if $keycloak.enabled }}
-  {{- $tasUsername := "trusted-artifact-signer" -}}
-  {{- $tasEmail := printf "%s@%s" $tasUsername .Values.trustedArtifactSigner.ingressDomain -}}
+{{- $iam := .Values.iam.keycloakCR }}
+{{- $tpa := $iam.trustedProfileAnalyzerRealm }}
+{{- $tas := $iam.trustedArtifactSignerRealm }}
+{{- $rhdh := $iam.rhdhRealm }}
+{{- if or $tas.enabled $tpa.enabled $rhdh.enabled }}
+#
+# Realm admin credentials
+#
+{{- $adminUsername := $iam.adminUsername }}
+{{- $adminEmail := printf "%s@%s" $adminUsername $iam.ingressDomain }}
+{{-
+  $adminSecretObj :=
+    (lookup "v1" "Secret" .Release.Namespace $iam.adminSecretName) |
+    default dict
+}}
+{{- $adminSecretData := (get $adminSecretObj "data") | default dict }}
+{{- $adminPassword := (get $adminSecretData "password") | default (randAlphaNum 16 | b64enc) }}
+#
+# TAS OIDC credentials
+#
+{{- 
+  $oidcSecretObjTAS := 
+    (lookup "v1" "Secret" .Release.Namespace $tas.oidcClientsSecretName) |
+    default dict
+}}
+{{- $oidcSecretDataTAS := (get $oidcSecretObjTAS "data") | default dict }}
+{{- $oidcCredentialsTAS := dict }}
+#
+# TPA OIDC credentials
+#
+{{- 
+  $oidcSecretObjTPA := 
+    (lookup "v1" "Secret" .Release.Namespace $tpa.oidcClientsSecretName) |
+    default dict
+}}
+{{- $oidcSecretDataTPA := (get $oidcSecretObjTPA "data") | default dict }}
+{{- $oidcCredentialsTPA := dict }}
+#
+# RHDH OIDC credentials
+#
+{{- 
+  $oidcSecretObjRHDH := 
+    (lookup "v1" "Secret" .Release.Namespace $rhdh.oidcClientsSecretName) |
+    default dict
+}}
+{{- $oidcSecretDataRHDH := (get $oidcSecretObjRHDH "data") | default dict }}
+{{- $oidcCredentialsRHDH := dict }}
+#
+# TAS clients
+#
+#   Creates a secret which contains all enabled clients' credentials.
+#
+{{- if $tas.enabled }}
 ---
-  {{- 
-    $tasSecretObj := 
-      (lookup "v1" "Secret" .Release.Namespace $keycloak.userSecretName) |
-      default dict
-  -}}
-  {{- $tasSecretData := (get $tasSecretObj "data") | default dict -}}
-  {{- $tasPassword := (get $tasSecretData "password") | default (randAlphaNum 16 | b64enc) -}}
-apiVersion: v1
-kind: Secret
-metadata:
-  annotations:
-    helm.sh/resource-policy: keep
-  labels:
-    app: keycloak
-  namespace: {{ .Release.Namespace }}
-  name: {{
-    required ".userSecretName is required"
-    $keycloak.userSecretName
-  }}
-type: Opaque
-data:
-  username: {{ $tasUsername | b64enc }}
-  password: {{ $tasPassword }}
----
-  {{- 
-    $oidcSecretObj := 
-      (lookup "v1" "Secret" .Release.Namespace $keycloak.oidcClientsSecretName) |
-      default dict
-  -}}
-  {{- $oidcSecretData := (get $oidcSecretObj "data") | default dict -}}
-  {{- $oidcCredentials := dict -}}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -44,15 +62,134 @@ metadata:
   namespace: {{ .Release.Namespace }}
   name: {{
     required ".oidcClientsSecretName is required"
-    $keycloak.oidcClientsSecretName
+    $tas.oidcClientsSecretName
   }}
 type: Opaque
 data:
-  {{- range $k, $v := .Values.trustedArtifactSigner.keycloakRealmImport.clients -}}
-    {{- $s := (get $oidcSecretData $k) | default (include "generate.client.secret" . | b64enc) }}
-    {{- $oidcCredentials := mergeOverwrite $oidcCredentials (dict $k $s) }}
+  {{- range $k, $v := $tas.clients }}
+    {{- $s := (get $oidcSecretDataTAS $k) | default (include "generate.client.secret" . | b64enc) }}
+    {{- $oidcCredentialsTAS = mergeOverwrite $oidcCredentialsTAS (dict $k $s) }}
   {{ $k }}: {{ $s }}
   {{- end }}
+{{- end }}
+#
+# TPA Clients
+#
+#   Creates a secret which contains all enabled clients' credentials.
+#
+{{- if $tpa.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    app: keycloak
+  namespace: {{ .Release.Namespace }}
+  name: {{
+    required ".oidcClientsSecretName is required"
+    $tpa.oidcClientsSecretName
+  }}
+type: Opaque
+data:
+  {{- range $k, $v := $tpa.clients }}
+    {{- $s := (get $oidcSecretDataTPA $k) | default (include "generate.client.secret" . | b64enc) }}
+    {{- $oidcCredentialsTPA = mergeOverwrite $oidcCredentialsTPA (dict $k $s) }}
+  {{ $k }}: {{ $s }}
+  {{- end }}
+#
+# TPA Integration Secret
+#
+#   Creates a secret to store integration details.
+#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: keycloak
+  namespace: {{
+    required ".Values.trustedProfileAnalyzerRealm.integrationSecret.namespace is required"
+      $tpa.integrationSecret.namespace
+  }}
+  name: {{
+    required "Values.trustedProfileAnalyzerRealm.integrationSecret.name is required"
+      $tpa.integrationSecret.name
+  }}
+type: Opaque
+stringData:
+  bombastic_api_url: {{
+    required ".Values.trustedProfileAnalyzerRealm.integrationSecret.bombasticAPI is required"
+      $tpa.integrationSecret.bombasticAPI
+  }}
+  oidc_issuer_url: {{
+    required ".Values.trustedProfileAnalyzerRealm.oidcIssuerURL is required"
+      $tpa.oidcIssuerURL
+  }}
+  oidc_client_id: {{
+    required ".Values.trustedProfileAnalyzerRealm.integrationSecret.oidcClientID is required"
+      $tpa.integrationSecret.oidcClientID
+  }}
+  oidc_client_secret: {{
+    get $oidcCredentialsTPA
+      $tpa.integrationSecret.oidcClientID |
+        b64dec
+  }}
+  supported_cyclonedx_version: "{{
+    required ".Values.trustedProfileAnalyzerRealm.integrationSecret.cycloneDXVersion is required"
+      $tpa.integrationSecret.cycloneDXVersion
+  }}"
+{{- end }}
+#
+# RHDH Client
+# Create a secret to store RHDH client credentials
+#
+{{- if $rhdh.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    app: keycloak
+  namespace: {{ .Release.Namespace }}
+  name: {{
+    required ".oidcClientsSecretName is required"
+    $rhdh.oidcClientsSecretName
+  }}
+type: Opaque
+data:
+  {{- range $k, $v := $rhdh.clients }}
+    {{- $s := (get $oidcSecretDataRHDH $k) | default (include "generate.client.secret" . | b64enc) }}
+    {{- $oidcCredentialsRHDH = mergeOverwrite $oidcCredentialsRHDH (dict $k $s) }}
+  {{ $k }}: {{ $s }}
+  {{- end }}
+{{- end }}
+
+#
+# Realm Admin
+#
+#   Creates a secret to store admin's credentials.
+#
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+  labels:
+    app: keycloak
+  namespace: {{ .Release.Namespace }}
+  name: {{
+    required ".adminSecretName is required"
+    $iam.adminSecretName
+  }}
+type: Opaque
+data:
+  username: {{ $adminUsername | b64enc }}
+  password: {{ $adminPassword }}
 ---
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: KeycloakRealmImport
@@ -61,13 +198,13 @@ metadata:
     app: keycloak
   namespace: {{
     required ".keycloakCR.namespace is required"
-      $keycloak.keycloakCR.namespace
+      $iam.namespace
   }}
-  name: trusted-artifact-signer
+  name: {{ $iam.realmsName }}
 spec:
   keycloakCRName: {{
     required ".keycloakCR.name is required"
-      $keycloak.keycloakCR.name
+      $iam.name
   }}
   realm:
     accessCodeLifespan: 60
@@ -837,6 +974,15 @@ spec:
             name: acr loa level
             protocol: openid-connect
             protocolMapper: oidc-acr-mapper
+      - attributes: {}
+        name: create:document
+        protocol: openid-connect
+      - attributes: {}
+        name: delete:document
+        protocol: openid-connect
+      - attributes: {}
+        name: read:document
+        protocol: openid-connect
       - attributes:
           consent.screen.text: ${samlRoleListScopeConsentText}
           display.on.consent.screen: "true"
@@ -894,7 +1040,7 @@ spec:
       - alwaysDisplayInConsole: false
         attributes: {}
         authenticationFlowBindingOverrides: {}
-        baseUrl: /realms/trusted-artifact-signer/account/
+        baseUrl: /realms/{{ $iam.realmsName }}/account/
         bearerOnly: false
         clientAuthenticatorType: client-secret
         clientId: account
@@ -921,7 +1067,7 @@ spec:
         protocol: openid-connect
         publicClient: true
         redirectUris:
-          - /realms/trusted-artifact-signer/account/*
+          - /realms/{{ $iam.realmsName }}/account/*
         rootUrl: ${authBaseUrl}
         serviceAccountsEnabled: false
         standardFlowEnabled: true
@@ -931,7 +1077,7 @@ spec:
         attributes:
           pkce.code.challenge.method: S256
         authenticationFlowBindingOverrides: {}
-        baseUrl: /realms/trusted-artifact-signer/account/
+        baseUrl: /realms/{{ $iam.realmsName }}/account/
         bearerOnly: false
         clientAuthenticatorType: client-secret
         clientId: account-console
@@ -964,7 +1110,7 @@ spec:
             protocolMapper: oidc-audience-resolve-mapper
         publicClient: true
         redirectUris:
-          - /realms/trusted-artifact-signer/account/*
+          - /realms/{{ $iam.realmsName }}/account/*
         rootUrl: ${authBaseUrl}
         serviceAccountsEnabled: false
         standardFlowEnabled: true
@@ -1073,7 +1219,7 @@ spec:
         attributes:
           pkce.code.challenge.method: S256
         authenticationFlowBindingOverrides: {}
-        baseUrl: /admin/trusted-artifact-signer/console/
+        baseUrl: /admin/{{ $iam.realmsName }}/console/
         bearerOnly: false
         clientAuthenticatorType: client-secret
         clientId: security-admin-console
@@ -1112,13 +1258,91 @@ spec:
             protocolMapper: oidc-usermodel-attribute-mapper
         publicClient: true
         redirectUris:
-          - /admin/trusted-artifact-signer/console/*
+          - /admin/{{ $iam.realmsName }}/console/*
         rootUrl: ${authAdminUrl}
         serviceAccountsEnabled: false
         standardFlowEnabled: true
         surrogateAuthRequired: false
         webOrigins:
           - +
+  {{- if $rhdh.enabled }}
+      - alwaysDisplayInConsole: false
+        attributes:
+          backchannel.logout.session.required: "true"
+          backchannel.logout.revoke.offline.tokens: "false"
+        authenticationFlowBindingOverrides: {}
+        bearerOnly: false
+        clientAuthenticatorType: client-secret
+        clientId: rhdh
+        secret: {{ get $oidcCredentialsRHDH "rhdh" | b64dec }}
+        enabled: {{ $rhdh.clients.rhdh.enabled }}
+        consentRequired: false
+        defaultClientScopes:
+          - web-origins
+          - acr
+          - roles
+          - profile
+          - email
+        directAccessGrantsEnabled: true
+        frontchannelLogout: false
+        fullScopeAllowed: true
+        implicitFlowEnabled: false
+        nodeReRegistrationTimeout: -1
+        notBefore: 0
+        optionalClientScopes: []
+        protocol: openid-connect
+        protocolMappers:
+          - config:
+              access.token.claim: "true"
+              claim.name: clientAddress
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientAddress
+            consentRequired: false
+            name: Client IP Address
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: client_id
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: client_id
+            consentRequired: false
+            name: Client ID
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: clientHost
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientHost
+            consentRequired: false
+            name: Client Host
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+        publicClient: false
+        redirectUris: {{
+          required ".rhdhRedirectUris is required"
+            $rhdh.rhdhRedirectUris |
+              toYaml |
+              nindent 10
+        }}
+        serviceAccountsEnabled: true
+        standardFlowEnabled: true
+        surrogateAuthRequired: false
+        webOrigins: {{
+          required ".rhdhOriginUris is required"
+            $rhdh.rhdhOriginUris |
+              toYaml |
+              nindent 10
+        }}
+  {{- end }}
+  {{- if $tas.enabled }}
       - alwaysDisplayInConsole: false
         attributes:
           request.object.signature.alg: RS256
@@ -1127,8 +1351,8 @@ spec:
         bearerOnly: false
         clientAuthenticatorType: client-secret
         clientId: trusted-artifact-signer
-        secret: {{ get $oidcCredentials "trustedArtifactSigner" | b64dec }}
-        enabled: {{ $keycloak.clients.trustedArtifactSigner.enabled }}
+        secret: {{ get $oidcCredentialsTAS "trustedArtifactSigner" | b64dec }}
+        enabled: {{ $tas.clients.trustedArtifactSigner.enabled }}
         consentRequired: false
         defaultClientScopes:
           - profile
@@ -1181,6 +1405,266 @@ spec:
         standardFlowEnabled: true
         surrogateAuthRequired: false
         webOrigins: []
+  {{- end }}
+  {{- if $tpa.enabled }}
+      - alwaysDisplayInConsole: false
+        attributes:
+          access.token.lifespan: "300"
+          post.logout.redirect.uris: +
+        authenticationFlowBindingOverrides: {}
+        bearerOnly: false
+        clientAuthenticatorType: client-secret
+        clientId: frontend
+        consentRequired: false
+        defaultClientScopes:
+          - web-origins
+          - delete:document
+          - profile
+          - roles
+          - read:document
+          - email
+          - create:document
+        directAccessGrantsEnabled: false
+        enabled: true
+        frontchannelLogout: false
+        fullScopeAllowed: true
+        implicitFlowEnabled: true
+        nodeReRegistrationTimeout: -1
+        notBefore: 0
+        optionalClientScopes:
+          - address
+          - phone
+          - offline_access
+          - microprofile-jwt
+        protocol: openid-connect
+        publicClient: true
+        redirectUris: {{
+          required ".frontendRedirectUris is required"
+            $tpa.frontendRedirectUris |
+              toYaml |
+              nindent 10
+        }}
+        serviceAccountsEnabled: false
+        standardFlowEnabled: true
+        surrogateAuthRequired: false
+        webOrigins:
+          - "*"
+      - alwaysDisplayInConsole: false
+        attributes:
+          access.token.lifespan: "300"
+          client.secret.creation.time: "1710855244"
+          post.logout.redirect.uris: +
+        authenticationFlowBindingOverrides: {}
+        bearerOnly: false
+        clientAuthenticatorType: client-secret
+        clientId: testing-manager
+        secret: {{ get $oidcCredentialsTPA "testingManager" | b64dec }}
+        consentRequired: false
+        defaultClientScopes:
+          - web-origins
+          - delete:document
+          - profile
+          - roles
+          - read:document
+          - email
+          - create:document
+        directAccessGrantsEnabled: false
+        enabled: {{ $tpa.clients.testingManager.enabled }}
+        frontchannelLogout: false
+        fullScopeAllowed: true
+        implicitFlowEnabled: false
+        nodeReRegistrationTimeout: -1
+        notBefore: 0
+        optionalClientScopes:
+          - address
+          - phone
+          - offline_access
+          - microprofile-jwt
+        protocol: openid-connect
+        protocolMappers:
+          - config:
+              access.token.claim: "true"
+              claim.name: clientAddress
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientAddress
+            consentRequired: false
+            name: Client IP Address
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: client_id
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: client_id
+            consentRequired: false
+            name: Client ID
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: clientHost
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientHost
+            consentRequired: false
+            name: Client Host
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+        publicClient: false
+        redirectUris: []
+        serviceAccountsEnabled: true
+        standardFlowEnabled: false
+        surrogateAuthRequired: false
+        webOrigins: []
+      - alwaysDisplayInConsole: false
+        attributes:
+          access.token.lifespan: "300"
+          client.secret.creation.time: "1710855252"
+          post.logout.redirect.uris: +
+        authenticationFlowBindingOverrides: {}
+        bearerOnly: false
+        clientAuthenticatorType: client-secret
+        clientId: testing-user
+        secret: {{ get $oidcCredentialsTPA "testingUser" | b64dec }}
+        consentRequired: false
+        defaultClientScopes:
+          - web-origins
+          - profile
+          - roles
+          - read:document
+          - email
+        directAccessGrantsEnabled: false
+        enabled: {{ $tpa.clients.testingUser.enabled }}
+        frontchannelLogout: false
+        fullScopeAllowed: true
+        implicitFlowEnabled: false
+        nodeReRegistrationTimeout: -1
+        notBefore: 0
+        optionalClientScopes:
+          - address
+          - phone
+          - offline_access
+          - microprofile-jwt
+        protocol: openid-connect
+        protocolMappers:
+          - config:
+              access.token.claim: "true"
+              claim.name: client_id
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: client_id
+            consentRequired: false
+            name: Client ID
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: clientHost
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientHost
+            consentRequired: false
+            name: Client Host
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: clientAddress
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientAddress
+            consentRequired: false
+            name: Client IP Address
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+        publicClient: false
+        redirectUris: []
+        serviceAccountsEnabled: true
+        standardFlowEnabled: false
+        surrogateAuthRequired: false
+        webOrigins: []
+      - alwaysDisplayInConsole: false
+        attributes:
+          access.token.lifespan: "300"
+          client.secret.creation.time: "1710855207"
+          post.logout.redirect.uris: +
+        authenticationFlowBindingOverrides: {}
+        bearerOnly: false
+        clientAuthenticatorType: client-secret
+        clientId: cli
+        secret: {{ get $oidcCredentialsTPA "cli" | b64dec }}
+        consentRequired: false
+        defaultClientScopes:
+          - web-origins
+          - profile
+          - roles
+          - read:document
+          - email
+          - create:document
+          - update:document
+          - delete:document
+        directAccessGrantsEnabled: false
+        enabled: {{ $tpa.clients.cli.enabled }}
+        frontchannelLogout: false
+        fullScopeAllowed: true
+        implicitFlowEnabled: false
+        nodeReRegistrationTimeout: -1
+        notBefore: 0
+        optionalClientScopes:
+          - address
+          - phone
+          - offline_access
+          - microprofile-jwt
+        protocol: openid-connect
+        protocolMappers:
+          - config:
+              access.token.claim: "true"
+              claim.name: clientHost
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientHost
+            consentRequired: false
+            name: Client Host
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: clientAddress
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: clientAddress
+            consentRequired: false
+            name: Client IP Address
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+          - config:
+              access.token.claim: "true"
+              claim.name: client_id
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              jsonType.label: String
+              user.session.note: client_id
+            consentRequired: false
+            name: Client ID
+            protocol: openid-connect
+            protocolMapper: oidc-usersessionmodel-note-mapper
+        publicClient: false
+        redirectUris: []
+        serviceAccountsEnabled: true
+        standardFlowEnabled: false
+        surrogateAuthRequired: false
+        webOrigins: []
+  {{- end }}
     components:
       org.keycloak.keys.KeyProvider:
         - config:
@@ -1296,10 +1780,16 @@ spec:
       clientRole: false
       composite: true
       description: ${role_default-roles}
-      name: default-roles-trusted-artifact-signer
+      name: default-roles-{{ $iam.realmsName }}
     defaultSignatureAlgorithm: RS256
     directGrantFlow: direct grant
-    displayName: Red-Hat-Trusted-Artifact-Signer
+    displayName: Red-Hat-TSSC-Realm
+    displayNameHtml: Red-Hat-TSSC-Realm
+    emailTheme: keycloak
+    eventsExpiration: 0
+    eventsListeners:
+      - jboss-logging
+    loginTheme: keycloak
     dockerAuthenticationFlow: docker auth
     duplicateEmailsAllowed: false
     editUsernameAllowed: false
@@ -1335,7 +1825,7 @@ spec:
       - Google Authenticator
     permanentLockout: false
     quickLoginCheckMilliSeconds: 1000
-    realm: trusted-artifact-signer
+    realm: {{ $iam.realmsName }}
     refreshTokenMaxReuse: 0
     registrationAllowed: false
     registrationEmailAsUsername: false
@@ -1577,7 +2067,18 @@ spec:
             description: ${role_query-realms}
             name: query-realms
         security-admin-console: []
+  {{- if $tas.enabled }}
         trusted-artifact-signer: []
+  {{- end }}
+  {{- if $tpa.enabled }}
+        frontend: []
+        testing-manager: []
+        testing-user: []
+        cli: []
+  {{- end }}
+  {{- if $rhdh.enabled }}
+        rhdh: []
+  {{- end }}
       realm:
         - attributes: {}
           clientRole: false
@@ -1601,8 +2102,26 @@ spec:
               - offline_access
               - uma_authorization
           description: ${role_default-roles}
-          name: default-roles-trusted-artifact-signer
+          name: default-roles-{{ $iam.realmsName }}
+        - attributes: {}
+          clientRole: false
+          composite: false
+          name: {{ $iam.realmsName }}-manager
+        - attributes: {}
+          clientRole: false
+          composite: false
+          name: {{ $iam.realmsName }}-user
+        - attributes: {}
+          clientRole: false
+          composite: false
+          name: {{ $iam.realmsName }}-admin
     scopeMappings:
+      - clientScope: delete:document
+        roles:
+          - {{ $iam.realmsName }}-manager
+      - clientScope: create:document
+        roles:
+          - {{ $iam.realmsName }}-manager
       - clientScope: offline_access
         roles:
           - offline_access
@@ -1615,20 +2134,78 @@ spec:
     supportedLocales: []
     userManagedAccessAllowed: false
     users:
-      - username: {{ $tasUsername }}
-        email: {{ $tasEmail }}
+      - username: {{ $adminUsername }}
+        email: {{ $adminEmail }}
         credentials:
           - type: password
-            value: {{ $tasPassword | b64dec }}
+            value: {{ $adminPassword | b64dec }}
             temporary: false
         disableableCredentialTypes: []
         emailVerified: false
         enabled: true
         groups: []
         notBefore: 0
-        realmRoles: []
+        realmRoles:
+          - default-roles-{{ $iam.realmsName }}
+          - {{ $iam.realmsName }}-admin
+          - {{ $iam.realmsName }}-manager
         requiredActions: []
         totp: false
+  {{- if $tpa.enabled }}
+      - disableableCredentialTypes: []
+        emailVerified: false
+        enabled: true
+        groups: []
+        notBefore: 0
+        realmRoles:
+          - default-roles-{{ $iam.realmsName }}
+          - {{ $iam.realmsName }}-manager
+        requiredActions: []
+        serviceAccountClientId: testing-manager
+        totp: false
+        username: service-account-testing-manager
+      - disableableCredentialTypes: []
+        emailVerified: false
+        enabled: true
+        groups: []
+        notBefore: 0
+        realmRoles:
+          - default-roles-{{ $iam.realmsName }}
+          - {{ $iam.realmsName }}-manager
+        requiredActions: []
+        serviceAccountClientId: testing-user
+        totp: false
+        username: service-account-testing-user
+      - disableableCredentialTypes: []
+        emailVerified: false
+        enabled: true
+        groups: []
+        notBefore: 0
+        realmRoles:
+          - default-roles-{{ $iam.realmsName }}
+          - {{ $iam.realmsName }}-manager
+        requiredActions: []
+        serviceAccountClientId: cli
+        totp: false
+        username: service-account-cli
+  {{- end }}
+  {{- if $rhdh.enabled }}
+      - disableableCredentialTypes: []
+        username: service-account-rhdh
+        emailVerified: false
+        enabled: true
+        totp: false
+        serviceAccountClientId: rhdh
+        requiredActions: []
+        realmRoles:
+          - default-roles-{{ $iam.realmsName }}
+        clientRoles:
+          realm-management:
+            - view-users
+            - query-groups
+            - query-users
+        groups: []
+  {{- end }}
     verifyEmail: false
     waitIncrementSeconds: 60
     webAuthnPolicyAcceptableAaguids: []
