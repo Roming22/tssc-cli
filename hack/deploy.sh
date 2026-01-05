@@ -67,9 +67,6 @@ parse_args() {
             ;;
         -i|--integration)
             case $2 in
-            acs)
-                ACS=1
-                ;;
             bitbucket)
                 BITBUCKET=1
                 ;;
@@ -84,9 +81,6 @@ parse_args() {
                 ;;
             jenkins)
                 JENKINS=1
-                ;;
-            quay)
-                QUAY=1
                 ;;
             tas)
                 TAS=1
@@ -180,11 +174,6 @@ unshare() {
 }
 
 configure() {
-    if [ -n "${CATALOG_URL:-}" ]; then
-        export CATALOG_URL
-        yq -i '.tssc.products[] |= select(.name == "Developer Hub").properties.catalogURL=strenv(CATALOG_URL)' "${CONFIG}"
-    fi
-
     if [[ -n "${CI:-}" ]]; then
         sed -i 's/\( *ci\): .*/\1: true/' "$VALUES"
     fi
@@ -203,11 +192,6 @@ configure() {
 }
 
 integrations() {
-    if [[ -n "${ACS:-}" ]]; then
-        tssc_cli integration acs --force \
-            --endpoint='"$ACS__CENTRAL_ENDPOINT"' \
-            --token='"$ACS__API_TOKEN"'
-    fi
     if [[ -n "${BITBUCKET:-}" ]]; then
         tssc_cli integration bitbucket --force \
             --app-password='"$BITBUCKET__APP_PASSWORD"' \
