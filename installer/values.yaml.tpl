@@ -4,6 +4,7 @@
 # Products settings
 {{- $certManager := required "Cert-Manager settings" .Installer.Products.Cert_Manager -}}
 {{- $certManagerNamespace := "cert-manager-operator" -}}
+{{- $konflux := required "Konflux settings" .Installer.Products.Konflux -}}
 {{- $pipelines := required "Pipelines settings" .Installer.Products.OpenShift_Pipelines -}}
 {{- $pipelinesNamespace := "openshift-pipelines" -}}
 {{- $tas := required "TAS settings" .Installer.Products.Trusted_Artifact_Signer -}}
@@ -36,6 +37,10 @@ openshift:
     - {{ $keycloakNamespace }}
     - rhbk-operator
 {{- end }}
+{{- if $konflux.Enabled }}
+    - {{ $konflux.Namespace }}
+    - konflux-operator
+{{- end }}
 {{- if $tpa.Enabled }}
     - {{ $tpa.Namespace }}
     {{- if $tpa.Properties.manageSubscription }}
@@ -55,6 +60,9 @@ openshift:
 
 
 subscriptions:
+  konflux:
+    enabled: {{ $konflux.Enabled }}
+    managed: {{ and $konflux.Enabled $konflux.Properties.manageSubscription }}
   openshiftCertManager:
     enabled: {{ $certManager.Enabled }}
     managed: {{ and $certManager.Enabled $certManager.Properties.manageSubscription }}
@@ -155,6 +163,11 @@ iam:
             $ingressDomain
         }}
         namespace: {{ .Installer.Namespace }}
+#
+# tssc-konflux
+#
+
+# konflux: null
 
 #
 # tssc-pipelines
