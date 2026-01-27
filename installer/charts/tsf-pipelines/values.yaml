@@ -1,0 +1,5 @@
+---
+pipelines:
+  namespace: __OVERWRITE_ME__
+  tsf:
+    namespace: __OVERWRITE_ME__

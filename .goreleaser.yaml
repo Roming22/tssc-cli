@@ -1,10 +1,10 @@
 ---
-project_name: tssc
+project_name: tsf
 dist: bin/dist
 
 builds:
-  - id: tssc
-    binary: tssc
+  - id: tsf
+    binary: tsf
     goos:
       - darwin
       - linux
@@ -13,7 +13,7 @@ builds:
       - GOFLAGS={{ .Env.GOFLAGS }}
       - CGO_ENABLED={{ .Env.CGO_ENABLED }}
       - CGO_LDFLAGS={{ .Env.CGO_LDFLAGS }}
-    main: cmd/tssc/main.go
+    main: cmd/tsf/main.go
     goarch:
       - arm64
       - amd64

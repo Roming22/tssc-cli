@@ -1,4 +1,4 @@
-APP = tssc
+APP = tsf
 
 BIN_DIR ?= ./bin
 BIN ?= $(BIN_DIR)/$(APP)

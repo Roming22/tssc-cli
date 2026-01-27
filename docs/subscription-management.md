@@ -4,7 +4,7 @@
 
 ### Automatic
 
-All subscriptions have the setting set to `Automatic` (c.f. [subscriptions.yaml](../installer/charts/tssc-subscriptions/templates/subscriptions.yaml)).
+All subscriptions have the setting set to `Automatic` (c.f. [subscriptions.yaml](../installer/charts/tsf-subscriptions/templates/subscriptions.yaml)).
 
 This default was chosen because:
 

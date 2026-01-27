@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Manage a full deployment of TSSC based on values from an env file
+# Manage a full deployment of TSF based on values from an env file
 # and a few parameters
 
 # shellcheck disable=SC2016
@@ -127,7 +127,7 @@ build() {
     else
         if [ "${CLI_IMAGE:-}" = "dev" ]; then
             make image-podman
-            CLI_IMAGE="ghcr.io/redhat-appstudio/tssc:latest"
+            CLI_IMAGE="ghcr.io/redhat-appstudio/tsf:latest"
         fi
     fi
 }
@@ -149,12 +149,12 @@ init_config() {
     source "$ENVFILE"
 }
 
-tssc_cli() {
+tsf_cli() {
     $CLI "$@"
 }
 
 run_bin() {
-    eval "$PROJECT_DIR/bin/tssc $*"
+    eval "$PROJECT_DIR/bin/tsf $*"
 }
 
 run_container() {
@@ -163,10 +163,10 @@ run_container() {
         --env-file="$ENVFILE" \
         --publish "$CLI_PORT:$CLI_PORT" \
         --rm \
-        --volume="$KUBECONFIG:/tssc/.kube/config:Z,U" \
-        --volume="$CONFIG:/tssc/$(basename "$CONFIG"):Z,U" \
+        --volume="$KUBECONFIG:/tsf/.kube/config:Z,U" \
+        --volume="$CONFIG:/tsf/$(basename "$CONFIG"):Z,U" \
         "$CLI_IMAGE" \
-        -c "tssc $*"
+        -c "tsf $*"
     unshare
 }
 
@@ -178,13 +178,13 @@ unshare() {
 
 configure() {
     if [[ -n "${CERT_MANAGER:-}" ]]; then
-        yq -i '(.tssc.products[] | select(.name == "Cert-Manager")).enabled = false' "$CONFIG"
+        yq -i '(.tsf.products[] | select(.name == "Cert-Manager")).enabled = false' "$CONFIG"
     fi
     if [[ -n "${CI:-}" ]]; then
         sed -i 's/\( *ci\): .*/\1: true/' "$VALUES"
     fi
     cd "$(dirname "$CONFIG")"
-    tssc_cli config --force --get --create "$(basename "$CONFIG")"
+    tsf_cli config --force --get --create "$(basename "$CONFIG")"
 
     NAMESPACE="$(
         kubectl get configmap \
@@ -199,55 +199,55 @@ configure() {
 
 integrations() {
     if [[ -n "${BITBUCKET:-}" ]]; then
-        tssc_cli integration bitbucket --force \
+        tsf_cli integration bitbucket --force \
             --app-password='"$BITBUCKET__APP_PASSWORD"' \
             --host='"$BITBUCKET__HOST"' \
             --username='"$BITBUCKET__USERNAME"'
     fi
     if [[ -n "${GITHUB:-}" ]]; then
-        if ! kubectl get secret -n "$NAMESPACE" tssc-github-integration >/dev/null 2>&1; then
-            tssc_cli integration github-app \
+        if ! kubectl get secret -n "$NAMESPACE" tsf-github-integration >/dev/null 2>&1; then
+            tsf_cli integration github-app \
                 --create \
                 --token='"$GITHUB__ORG_TOKEN"' \
                 --org='"$GITHUB__ORG"' \
-                "tssc-$GITHUB__ORG-$(date +%m%d-%H%M)"
+                "tsf-$GITHUB__ORG-$(date +%m%d-%H%M)"
         fi
     fi
     if [[ -n "${GITLAB:-}" ]]; then
         if [[ -n "${GITLAB__APP__CLIENT__ID:-}" && -n "${GITLAB__APP__CLIENT__SECRET:-}" ]]; then
-            tssc_cli integration gitlab --force \
+            tsf_cli integration gitlab --force \
                 --app-id='"$GITLAB__APP__CLIENT__ID"' \
                 --app-secret='"$GITLAB__APP__CLIENT__SECRET"' \
                 --group='"$GITLAB__GROUP"' \
                 --host='"$GITLAB__HOST"' \
                 --token='"$GITLAB__TOKEN"'
         else
-            tssc_cli integration gitlab --force \
+            tsf_cli integration gitlab --force \
                 --group='"$GITLAB__GROUP"' \
                 --host='"$GITLAB__HOST"' \
                 --token='"$GITLAB__TOKEN"'
         fi
     fi
     if [[ -n "${JENKINS:-}" ]]; then
-        tssc_cli integration jenkins --force \
+        tsf_cli integration jenkins --force \
             --token='"$JENKINS__TOKEN"' \
             --url='"$JENKINS__URL"' \
             --username='"$JENKINS__USERNAME"'
     fi
     if [[ -n "${QUAY:-}" ]]; then
-        tssc_cli integration quay --force \
+        tsf_cli integration quay --force \
             --dockerconfigjson='"$QUAY__DOCKERCONFIGJSON"' \
             --token='"$QUAY__API_TOKEN"' --url='"$QUAY__URL"'
     fi
     if [[ -n "${TAS:-}" ]]; then
-        tssc_cli integration trusted-artifact-signer --force \
+        tsf_cli integration trusted-artifact-signer --force \
             --rekor-url='"$TAS__REKOR_URL"' \
             --tuf-url='"$TAS__TUF_URL"'
     fi
 }
 
 deploy() {
-    time tssc_cli deploy "${DEBUG:-}"
+    time tsf_cli deploy "${DEBUG:-}"
 }
 
 configure_ci() {

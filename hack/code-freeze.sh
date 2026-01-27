@@ -25,12 +25,12 @@ Example:
 }
 
 parse_args() {
-    GIT_URL="git@github.com:redhat-appstudio/tssc-cli.git"
+    GIT_URL="git@github.com:redhat-appstudio/tsf-cli.git"
     while [[ $# -gt 0 ]]; do
         case $1 in
         --dry-run)
             DRY_RUN=1
-            GIT_URL="https://github.com/redhat-appstudio/tssc-cli.git"
+            GIT_URL="https://github.com/redhat-appstudio/tsf-cli.git"
             ;;
         -d | --debug)
             set -x
@@ -53,7 +53,7 @@ parse_args() {
 
 init() {
     TMP_DIR=$(mktemp -d)
-    PROJECT_DIR="$TMP_DIR/tssc-cli"
+    PROJECT_DIR="$TMP_DIR/tsf-cli"
     trap cleanup EXIT
 
     git clone "$GIT_URL" "$PROJECT_DIR"
@@ -70,7 +70,7 @@ cleanup() {
 
 get_version() {
     VERSION_XY="$(
-        yq '.subscriptions.'"$1"'.channel' installer/charts/tssc-subscriptions/values.yaml \
+        yq '.subscriptions.'"$1"'.channel' installer/charts/tsf-subscriptions/values.yaml \
         | grep --extended-regexp "[0-9.]*" --only-matching
     )"
     VERSION_XYZ="$VERSION_XY.0"
@@ -87,23 +87,23 @@ update_charts() {
 
     # Bump "appVersion" in all charts
     get_version "openshiftGitOps"
-    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tssc-gitops/Chart.yaml"
+    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tsf-gitops/Chart.yaml"
     get_version "openshiftPipelines"
-    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tssc-pipelines/Chart.yaml"
+    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tsf-pipelines/Chart.yaml"
     get_version "openshiftTrustedArtifactSigner"
-    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tssc-tas/Chart.yaml"
+    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tsf-tas/Chart.yaml"
     get_version "advancedClusterSecurity"
-    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tssc-acs/Chart.yaml"
-    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tssc-acs-test/Chart.yaml"
+    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tsf-acs/Chart.yaml"
+    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tsf-acs-test/Chart.yaml"
     get_version "developerHub"
-    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tssc-dh/Chart.yaml"
+    yq -i '.appVersion = strenv(VERSION_XY)' "installer/charts/tsf-dh/Chart.yaml"
 }
 
 update_template() {
     CONFIG="installer/config.yaml"
     get_version "developerHub"
-    CATALOG_URL="https://github.com/redhat-appstudio/tssc-dev-multi-ci/blob/release-v${VERSION_XY}.x/samples/all.yaml" \
-    yq -i '(.tssc.products[] | select( .name == "Developer Hub") | .properties.catalogURL) = strenv(CATALOG_URL)' "$CONFIG"
+    CATALOG_URL="https://github.com/redhat-appstudio/tsf-dev-multi-ci/blob/release-v${VERSION_XY}.x/samples/all.yaml" \
+    yq -i '(.tsf.products[] | select( .name == "Developer Hub") | .properties.catalogURL) = strenv(CATALOG_URL)' "$CONFIG"
 }
 
 commit_freeze() {
@@ -114,13 +114,13 @@ commit_freeze() {
 }
 
 update_ci() {
-    for PLR in ".tekton/tssc-cli-pull-request.yaml" ".tekton/tssc-cli-push.yaml"; do
+    for PLR in ".tekton/tsf-cli-pull-request.yaml" ".tekton/tsf-cli-push.yaml"; do
         sed -i --regexp-extended "s|== \"main\"|== \"$RELEASE_BRANCH\"|" "$PLR"
-        sed -i --regexp-extended "s|  *appstudio\.openshift\.io/application: tssc-cli|\0-${VERSION_XY//./-}|" "$PLR"
-        sed -i --regexp-extended "s|  *appstudio\.openshift\.io/component: tssc-cli|\0-${VERSION_XY//./-}|" "$PLR"
+        sed -i --regexp-extended "s|  *appstudio\.openshift\.io/application: tsf-cli|\0-${VERSION_XY//./-}|" "$PLR"
+        sed -i --regexp-extended "s|  *appstudio\.openshift\.io/component: tsf-cli|\0-${VERSION_XY//./-}|" "$PLR"
     done
-    yq -i '.spec.params |= map(select(.name != "image-expires-after"))' ".tekton/tssc-cli-push.yaml"
-    yq -i '(.spec.pipelineSpec.tasks[] | select(.name == "apply-tags") | .params[] | select(.name == "ADDITIONAL_TAGS") | .value[0]) = strenv(RELEASE_BRANCH)' ".tekton/tssc-cli-push.yaml"
+    yq -i '.spec.params |= map(select(.name != "image-expires-after"))' ".tekton/tsf-cli-push.yaml"
+    yq -i '(.spec.pipelineSpec.tasks[] | select(.name == "apply-tags") | .params[] | select(.name == "ADDITIONAL_TAGS") | .value[0]) = strenv(RELEASE_BRANCH)' ".tekton/tsf-cli-push.yaml"
 }
 
 commit_release() {

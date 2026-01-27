@@ -1,5 +1,5 @@
 ---
-tssc:
+tsf:
   settings:
     # Toggles the CRC settings for the installer, which adapts the deployment to
     # work on a CRC development environment.
@@ -29,7 +29,7 @@ tssc:
     # OpenID Connect (OIDC) provider such as Keycloak for identity-based signing.
     - name: Trusted Artifact Signer
       enabled: true
-      namespace: tssc-tas
+      namespace: tsf-tas
       properties:
         manageSubscription: true
     # Red Hat OpenShift Pipelines is a cloud-native CI/CD (Continuous
@@ -47,6 +47,6 @@ tssc:
     # Exposures (CVE) to assess their risk profile.
     - name: Trusted Profile Analyzer
       enabled: true
-      namespace: tssc-tpa
+      namespace: tsf-tpa
       properties:
         manageSubscription: true

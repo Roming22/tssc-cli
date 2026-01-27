@@ -44,7 +44,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ .Release.Name }}-secret-rw-installer-ns
-  namespace: {{ .integrationsecretnamespace | default "tssc" }}
+  namespace: {{ .integrationsecretnamespace | default "tsf}}
   labels: {{- include "common.postDeployDeleteLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io

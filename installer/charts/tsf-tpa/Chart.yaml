@@ -1,0 +1,11 @@
+---
+apiVersion: v2
+name: tsf-tpa
+description: TSF Trusted Profile Analyzer
+type: application
+version: "1.8.0"
+appVersion: "2.2.0"
+annotations:
+  helmet.redhat-appstudio.github.com/product-name: Trusted Profile Analyzer
+  helmet.redhat-appstudio.github.com/depends-on: tsf-openshift, tsf-subscriptions, tsf-infrastructure, tsf-iam
+  helmet.redhat-appstudio.github.com/integrations-provided: trustification

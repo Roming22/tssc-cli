@@ -1,11 +1,11 @@
-# `tssc`: Model Context Protocol Server (MCP)
+# `tsf`: Model Context Protocol Server (MCP)
 
 ## Usage
 
 Configure your agentic LLM client to run the following command, and use STDIO for communication with the server.
 
 ```sh
-tssc mcp-server --image="ghcr.io/redhat-appstudio/tssc:latest"
+tsf mcp-server --image="ghcr.io/redhat-appstudio/tsf:latest"
 ```
 
 Note: if you use Cursor, you can use the [Cursor MCP configuration](../.cursor/mcp.json)
@@ -23,7 +23,7 @@ The instructions provide a clear overview of what the MCP server is designed to 
 This is the recommended prompt to instruct the AI agent to start a deployment.
 
 ```text
-You are a senior Red Hat OpenShift Platform Engineer. You leverage a specialized OpenShift-based platform focused on Trusted Software Supply Chain (TSSC), primarily consisting of:
+You are a senior Red Hat OpenShift Platform Engineer. You leverage a specialized OpenShift-based platform focused on Trusted Software Factory (TSF), primarily consisting of:
 
 - Advanced Cluster Security (ACS)
 - OpenShift GitOps
@@ -37,7 +37,7 @@ Your primary function is to provide actionable commands: YAML manifests and `oc`
 
 Your interaction schema is built around Model Context Protocol (MCP) tools, enabling you to interact with various OpenShift work as a platform engineer. Your responses are structured to include a quick command block for immediate use.
 
-Now let's get started on deploying TSSC.
+Now let's get started on deploying TSF.
 ```
 
 ## Tools
@@ -46,22 +46,22 @@ The following MCP tools are exposed by the MCP server.
 
 ### Configuration
 
-This section covers for the features in `tssc config` subcommand.
+This section covers for the features in `tsf config` subcommand.
 
-#### `tssc_config_get`
+#### `tsf_config_get`
 
-- *Description*: Get the existing TSSC configuration in the cluster, or return the default if none exists yet. Use the default configuration as the reference to create a new TSSC configuration for the cluster.
+- *Description*: Get the existing TSF configuration in the cluster, or return the default if none exists yet. Use the default configuration as the reference to create a new TSF configuration for the cluster.
 - *Arguments*: None.
 
-#### `tssc_config_create`
+#### `tsf_config_create`
 
-- *Description*: Create a new TSSC configuration in the cluster, in case none exists yet. Use the defaults as the reference to create a new TSSC cluster configuration.
+- *Description*: Create a new TSF configuration in the cluster, in case none exists yet. Use the defaults as the reference to create a new TSF cluster configuration.
 - *Arguments*:
     - **namespace** (string):
-        - **Description**: The main namespace for TSSC (`.tssc.namespace`), where Red Hat Developer Hub (DH) and other fundamental services will be deployed.
+        - **Description**: The main namespace for TSF (`.tssc.namespace`), where Red Hat Developer Hub (DH) and other fundamental services will be deployed.
         - **Default**: "tssc".
     - **setting** (object):
-        - **Description**: The global settings object for TSSC (`.tssc.settings{}`). When empty the default settings will be used.
+        - **Description**: The global settings object for TSF (`.tssc.settings{}`). When empty the default settings will be used.
 
 ### Integration
 
@@ -69,7 +69,7 @@ Integrations with external services are managed via the `tssc integration <integ
 
 #### `tssc_integration_list`
 
-- *Description*: List the TSSC integrations available for the user. Certain integrations are required for certain features, make sure to configure the integrations accordingly.
+- *Description*: List the TSF integrations available for the user. Certain integrations are required for certain features, make sure to configure the integrations accordingly.
 - *Arguments*: None.
 
 ### Deploy
@@ -82,10 +82,10 @@ Following the same principle, the MCP server generates a Kubernetes Job to run t
 
 #### `tssc_deploy_status`
 
-- *Description*: Reports the status of the TSSC deploy Job running in the cluster.
+- *Description*: Reports the status of the TSF deploy Job running in the cluster.
 - *Arguments*: None.
 
 #### `tssc_deploy`
 
-- *Description*: Deploys TSSC components to the cluster, uses the cluster configuration to deploy the TSSC components sequentially.
+- *Description*: Deploys TSF components to the cluster, uses the cluster configuration to deploy the TSF components sequentially.
 - *Arguments*: None.

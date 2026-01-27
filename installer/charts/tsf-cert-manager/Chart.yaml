@@ -1,0 +1,10 @@
+---
+apiVersion: v2
+name: tsf-cert-manager
+description: TSF Cert-Manager
+type: application
+version: "1.8.0"
+appVersion: "1.x"
+annotations:
+  helmet.redhat-appstudio.github.com/product-name: Cert-Manager
+  helmet.redhat-appstudio.github.com/depends-on: tsf-openshift, tsf-subscriptions

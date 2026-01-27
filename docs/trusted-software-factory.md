@@ -2,7 +2,7 @@
 
 ## Quickstart
 
-1. Clone this repository/branch with `git clone https://github.com/redhat-appstudio/tssc-cli --branch tsf tsf`.
+1. Clone this repository/branch with `git clone https://github.com/redhat-appstudio/tsf-cli --branch tsf tsf`.
 2. `cd tsf`.
 2. Copy `hack/private.env.template` to `tsf.env`.
 3. Edit `tsf.env` and set the variables.
@@ -13,12 +13,12 @@
 
 ## Troubleshooting
 
-### tssc-subscription fails to install with "Error: upgrade failed"
+### tsf-subscription fails to install with "Error: upgrade failed"
 
 #### Full error
 
 ```
-Error: upgrade failed: Unable to continue with update: Subscription "openshift-cert-manager-operator" in namespace "cert-manager-operator" exists and cannot be imported into the current release: invalid ownership metadata; label validation error: missing key "app.kubernetes.io/managed-by": must be set to "Helm"; annotation validation error: missing key "meta.helm.sh/release-name": must be set to "tssc-subscriptions"; annotation validation error: missing key "meta.helm.sh/release-namespace": must be set to "tssc"
+Error: upgrade failed: Unable to continue with update: Subscription "openshift-cert-manager-operator" in namespace "cert-manager-operator" exists and cannot be imported into the current release: invalid ownership metadata; label validation error: missing key "app.kubernetes.io/managed-by": must be set to "Helm"; annotation validation error: missing key "meta.helm.sh/release-name": must be set to "tsf-subscriptions"; annotation validation error: missing key "meta.helm.sh/release-namespace": must be set to "tsf"
 ```
 
 #### Root cause
@@ -27,4 +27,4 @@ The subscription has already been installed by a third party. Helm does not want
 
 #### Workaround
 
-* Add `-i cert-manager` to the `./hack/tssc deploy` command.
+* Add `-i cert-manager` to the `./hack/tsf deploy` command.

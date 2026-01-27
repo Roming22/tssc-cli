@@ -1,4 +1,4 @@
-# Project: `github.com/redhat-appstudio/tssc-cli`
+# Project: `github.com/redhat-appstudio/tsf-cli`
 
 ## AI Assistant Guidelines
 
@@ -82,7 +82,7 @@ The repository packages are organized by dependency tier:
 - **`pkg/framework/`**: Application runtime that wires together all components. Creates App type, manages lifecycle, and registers subcommands.
 
 ### Application-Specific Directories
-- **`cmd/tssc/`**: Contains the `main` package - CLI entry point.
+- **`cmd/tsf/`**: Contains the `main` package - CLI entry point.
 - **`installer/`**: Helm charts (dependencies), default installer configuration, and `values.yaml.tpl` file. These resources are embedded in the executable using `go:embed` directive.
 - **`docs/`**: Project documentation files.
 - **`integration-tests/`**, **`test/`**: Test suites.

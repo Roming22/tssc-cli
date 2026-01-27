@@ -1,4 +1,4 @@
-Contributing to `tssc`
+Contributing to `tsf`
 ---------------------------
 
 This project also provides a [`GEMINI.md`](GEMINI.md) file with context for AI-powered code assistants.
@@ -75,20 +75,20 @@ Which is the equivalent of building and running the application, i.e.:
 
 ```bash
 make &&
-    bin/tssc deploy --help
+    bin/tsf deploy --help
 ```
 
-## Debugging `tssc mcp-server`
+## Debugging `tsf mcp-server`
 
-The [`tssc mcp-server`](docs/mcp.md) subcommand communicates [via `STDIO`][mcpTransports], to debug this subcommand using `dlv` you can use the [`hack/dlv-tssc-mcp-server.sh`](hack/dlv-tssc-mcp-server.sh) script, make sure [the debugger is installed][delveInstallation]. This script wraps `dlv exec` around `tssc mcp-server`, ensuring `STDIO` communication is properly redirected and the Delve API is exposed on a local port.
+The [`tsf mcp-server`](docs/mcp.md) subcommand communicates [via `STDIO`][mcpTransports], to debug this subcommand using `dlv` you can use the [`hack/dlv-tsf-mcp-server.sh`](hack/dlv-tsf-mcp-server.sh) script, make sure [the debugger is installed][delveInstallation]. This script wraps `dlv exec` around `tsf mcp-server`, ensuring `STDIO` communication is properly redirected and the Delve API is exposed on a local port.
 
-When you start the [`dlv-tssc-mcp-server.sh`](hack/dlv-tssc-mcp-server.sh) script, it will wait for the Delve client to connect before continuing execution. This is important to note, especially when using this approach with an LLM agentic client, as it can cause the client to hang while waiting for the debugger to attach.
+When you start the [`dlv-tsf-mcp-server.sh`](hack/dlv-tsf-mcp-server.sh) script, it will wait for the Delve client to connect before continuing execution. This is important to note, especially when using this approach with an LLM agentic client, as it can cause the client to hang while waiting for the debugger to attach.
 
 To configure VSCode for debugging, you can use the following `launch.json` snippet:
 
 ```json
 {
-    "name": "tssc-mcp-dlv",
+    "name": "tsf-mcp-dlv",
     "type": "go",
     "mode": "remote",
     "host": "localhost",
@@ -103,7 +103,7 @@ Follow these steps to start debugging the MCP server:
     ```sh
     make debug
     ```
-2. Configure the MCP server on your favorite LLM client, using the [`hack/dlv-tssc-mcp-server.sh`](hack/dlv-tssc-mcp-server.sh) script as command.
+2. Configure the MCP server on your favorite LLM client, using the [`hack/dlv-tsf-mcp-server.sh`](hack/dlv-tsf-mcp-server.sh) script as command.
 3. Start the LLM client, and right after attach the debugger.
 4. With the debugger client attached, you can use the LLM client and debug the project as usual.
 
@@ -142,7 +142,7 @@ The release assets are built using `goreleaser`, the configuration for this tool
 To build the release assets for only the current platform, run:
 
 ```bash
-make snapshot ARGS='--single-target --output=bin/tssc'
+make snapshot ARGS='--single-target --output=bin/tsf'
 ```
 
 To build the release assets for all platforms, run:
@@ -151,7 +151,7 @@ To build the release assets for all platforms, run:
 make snapshot
 ```
 
-[actions]: https://github.com/redhat-appstudio/tssc-cli/actions
+[actions]: https://github.com/redhat-appstudio/tsf-cli/actions
 [gitHubCLI]: https://cli.github.com
 [gitHubDocWorkflowEnvVars]: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/variables#default-environment-variables
 [gnuMake]: https://www.gnu.org/software/make
@@ -159,7 +159,7 @@ make snapshot
 [goreleaser]: https://goreleaser.com
 [buildah]: https://buildah.io
 [podman]: https://podman.io
-[releases]: https://github.com/redhat-appstudio/tssc-cli/releases
+[releases]: https://github.com/redhat-appstudio/tsf-cli/releases
 [gnuTar]: https://www.gnu.org/software/tar
 [mcpTransports]: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
 [delveInstallation]: https://github.com/go-delve/delve/tree/master/Documentation/installation

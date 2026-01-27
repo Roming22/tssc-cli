@@ -61,8 +61,8 @@ h1() {
 getNamespace() {
     export PRODUCT="$1"
     NAMESPACE="$(
-        oc get configmap -n tssc tssc-config -o jsonpath="{.data.config\.yaml}" \
-        | yq '.tssc.products[] | select(.name == strenv(PRODUCT)) | .namespace'
+        oc get configmap -n tsf tsf-config -o jsonpath="{.data.config\.yaml}" \
+        | yq '.tsf.products[] | select(.name == strenv(PRODUCT)) | .namespace'
     )"
     oc get namespace "$NAMESPACE" > /dev/null 2>&1
     return $?
@@ -94,18 +94,18 @@ tpa() {
     echo "  - URL: $(oc get route -n "$NAMESPACE" "$ROUTE" -o jsonpath="https://{.spec.host}")"
 }
 
-tssc() {
-    NAMESPACE="tssc"
-    h1 "TSSC"
+tsf() {
+    NAMESPACE="tsf"
+    h1 "TSF"
     echo "  - User: admin"
-    echo "  - Password: $(oc get secret -n "$NAMESPACE" tssc-realms-admin-user -o jsonpath="{.data.password}" | base64 -d)"
+    echo "  - Password: $(oc get secret -n "$NAMESPACE" tsf-realms-admin-user -o jsonpath="{.data.password}" | base64 -d)"
 }
 
 action() {
     konflux
     tas
     tpa
-    tssc
+    tsf
 }
 
 main() {

@@ -1,4 +1,4 @@
-module github.com/redhat-appstudio/tssc-cli
+module github.com/redhat-appstudio/tsf-cli
 
 go 1.25.5
 

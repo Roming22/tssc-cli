@@ -11,7 +11,7 @@
 {{- $tpa := required "TPA settings" .Installer.Products.Trusted_Profile_Analyzer -}}
 
 {{- $keycloakEnabled := or $tpa.Enabled $tas.Enabled -}}
-{{- $keycloakNamespace := "tssc-keycloak" -}}
+{{- $keycloakNamespace := "tsf-keycloak" -}}
 
 # Cluster settings
 {{- $ingressDomain := required "OpenShift ingress domain" .OpenShift.Ingress.Domain -}}
@@ -25,7 +25,7 @@ debug:
   ci: {{ dig "ci" "debug" false .Installer.Settings }}
 
 #
-# tssc-openshift
+# tsf-openshift
 #
 
 openshift:
@@ -55,7 +55,7 @@ openshift:
 {{- end }}
 
 #
-# tssc-subscriptions
+# tsf-subscriptions
 #
 
 
@@ -83,7 +83,7 @@ subscriptions:
     managed: {{ and $tpa.Enabled $tpa.Properties.manageSubscription }}
 
 #
-# tssc-infrastructure
+# tsf-infrastructure
 #
 
 infrastructure:
@@ -100,12 +100,12 @@ infrastructure:
     namespace: {{ $pipelinesNamespace }}
 
 #
-# tssc-iam
+# tsf-iam
 #
 
 {{- $keycloakRouteTLSSecretName := "keycloak-tls" }}
 {{- $keycloakRouteHost := printf "sso.%s" $ingressDomain }}
-{{- $realmsName := "tssc-iam" }}
+{{- $realmsName := "tsf-iam" }}
 {{- $tpaTestingUsersEnabled := false }}
 {{- $protocol := "https" -}}
 {{- if $crc }}
@@ -164,24 +164,24 @@ iam:
         }}
         namespace: {{ .Installer.Namespace }}
 #
-# tssc-konflux
+# tsf-konflux
 #
 
 konflux:
-  tssc:
+  tsf:
     namespace: {{ .Installer.Namespace }}
 
 #
-# tssc-pipelines
+# tsf-pipelines
 #
 
 pipelines:
   namespace: {{ $pipelinesNamespace }}
-  tssc:
+  tsf:
     namespace: {{ .Installer.Namespace }}
 
 #
-# tssc-tpa
+# tsf-tpa
 #
 
 {{- $tpaDatabaseSecretName := "tpa-pgsql-user" }}
@@ -266,7 +266,7 @@ trustification:
     serviceEnabled: "{{ not $crc }}"
 
 #
-# tssc-tas
+# tsf-tas
 #
 
 {{- $tasRealmPath := printf "realms/%s" $realmsName }}
@@ -284,6 +284,6 @@ trustedArtifactSigner:
       certificate:
         # TODO: promopt the user for organization email/name input!
         organizationEmail: trusted-artifact-signer@company.dev
-        organizationName: TSSC
+        organizationName: TSF
   integrationSecret:
     namespace: {{ .Installer.Namespace }}

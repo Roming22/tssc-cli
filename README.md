@@ -1,70 +1,70 @@
 <p align="center">
-    <a alt="Project quality report" href="https://goreportcard.com/report/github.com/redhat-appstudio/tssc-cli">
-        <img src="https://goreportcard.com/badge/github.com/redhat-appstudio/tssc-cli">
+    <a alt="Project quality report" href="https://goreportcard.com/report/github.com/redhat-appstudio/tsf-cli">
+        <img src="https://goreportcard.com/badge/github.com/redhat-appstudio/tsf-cli">
     </a>
-    <a alt="Release workflow status" href="https://github.com/redhat-appstudio/tssc-cli/actions">
-        <img src="https://github.com/redhat-appstudio/tssc-cli/actions/workflows/release.yaml/badge.svg">
+    <a alt="Release workflow status" href="https://github.com/redhat-appstudio/tsf-cli/actions">
+        <img src="https://github.com/redhat-appstudio/tsf-cli/actions/workflows/release.yaml/badge.svg">
     </a>
-    <a alt="Latest project release" href="https://github.com/redhat-appstudio/tssc-cli/releases/latest">
-        <img src="https://img.shields.io/github/v/release/redhat-appstudio/tssc-cli">
+    <a alt="Latest project release" href="https://github.com/redhat-appstudio/tsf-cli/releases/latest">
+        <img src="https://img.shields.io/github/v/release/redhat-appstudio/tsf-cli">
     </a>
 </p>
 
-Red Hat Trusted Software Supply Chain CLI (`tssc`)
+Red Hat Trusted Software Factory CLI (`tsf`)
 --------------------------------------------------
 
 # Abstract
 
-The `tssc` binary is designed as a sophisticated installer via Kubernetes [Helm Charts][helm], addressing the complexity of managing interdependent resources in Kubernetes environments. Unlike Kubernetes, which orchestrates resources individually without acknowledging their interdependencies, `tssc` enhances the deployment process by considering these relationships, thereby improving the user experience.
+The `tsf` binary is designed as a sophisticated installer via Kubernetes [Helm Charts][helm], addressing the complexity of managing interdependent resources in Kubernetes environments. Unlike Kubernetes, which orchestrates resources individually without acknowledging their interdependencies, `tsf` enhances the deployment process by considering these relationships, thereby improving the user experience.
 
 This CLI leverages a [`config.yaml`](installer/config.yaml) file to sequence Helm Chart deployments meticulously. It ensures the integrity of each deployment phase by executing a comprehensive test suite before proceeding to the next Chart installation. This methodical approach guarantees that each phase is successfully completed, enhancing reliability and stability.
 
-Helm, serving as the foundation of `tssc`, provides a detailed blueprint of resources within Kubernetes. This allows for thorough inspection and troubleshooting of deployment issues, offering users detailed documentation and tips for resolution. By integrating with Helm Charts, `tssc` not only adheres to industry standards but also opens the door to more sophisticated features, further enriching the deployment experience.
+Helm, serving as the foundation of `tsf`, provides a detailed blueprint of resources within Kubernetes. This allows for thorough inspection and troubleshooting of deployment issues, offering users detailed documentation and tips for resolution. By integrating with Helm Charts, `tsf` not only adheres to industry standards but also opens the door to more sophisticated features, further enriching the deployment experience.
 
-The `tssc` is designed to be user-friendly, providing a seamless installation process for users of all skill levels. 
+The `tsf` is designed to be user-friendly, providing a seamless installation process for users of all skill levels. 
 
-# Deploy TSSC
+# Deploy TSF
 
-Install the `tssc` binary on your local machine following [these instructions](#installing-tssc).
+Install the `tsf` binary on your local machine following [these instructions](#installing-tsf).
 
-Follow the below steps to deploy TSSC on Openshift cluster. 
+Follow the below steps to deploy TSF on Openshift cluster. 
 
 1. Create the installer's cluster configuration. You can use a local configuration file, or default settings. To use the default settings, run the command bellow, and see the [configuration](#configuration) section for more details.
 
 ```bash
 # Shows the options to manage cluster's configuration.
-tssc config --help
+tsf config --help
 
 # Creates a new default configuration in the cluster, showing the result.
-tssc config --create --get
+tsf config --create --get
 
 # Creates a new default configuration in the cluster in a specific namespace.
-tssc config --create --namespace tssc
+tsf config --create --namespace tsf
 ```
 
-2. Run the command `tssc` to display help text that shows all the supported commands and options. 
+2. Run the command `tsf` to display help text that shows all the supported commands and options. 
 
-3. Run the command `tssc integration` to provide integrations to external components. The command below lists the options supported: 
+3. Run the command `tsf integration` to provide integrations to external components. The command below lists the options supported: 
   
 ```bash
-tssc integration --help
+tsf integration --help
 ```
 
-4. Optionally, inspect the dependency topology before deploying TSSC by running:
+4. Optionally, inspect the dependency topology before deploying TSF by running:
 
 ```bash
-tssc topology
+tsf topology
 ```
   
-5. Finally, run the below command to proceed with TSSC deployment. 
+5. Finally, run the below command to proceed with TSF deployment. 
 
 ```bash
-tssc deploy
+tsf deploy
 ```
 
 ## Model Context Protocol Server (MCP)
 
-The TSSC features are also available via the Model Context Protocol server (MCP), please consider the [MCP documentation](docs/mcp.md) for more details.
+The TSF features are also available via the Model Context Protocol server (MCP), please consider the [MCP documentation](docs/mcp.md) for more details.
 
 # Configuration
 
@@ -72,34 +72,34 @@ The [`config.yaml`](installer/config.yaml) file is structured to outline key com
 
 ```yaml
 ---
-tssc:
+tsf:
   settings: {}
   products: {}
 ```
 
-The attributes of the `tssc` object are as follows:
+The attributes of the `tsf` object are as follows:
 
 - `.settings`: Defines the settings of the deployment. This can control a wide set of properties.
 - `.products`: Defines the features to be deployed by the installer. Each feature is identified by a unique name and a set of properties.
 
-## `tssc.settings`
+## `tsf.settings`
 
 Defines the settings of the deployment. This can control a wide set of properties. For example the following snippet flags the deployment as a CRC deployment, so that the configuration can be tuned to that particular usecase.
 
 ```yaml
 ---
-tssc:
+tsf:
   settings:
     crc: true
 ```
 
-## `tssc.products`
+## `tsf.products`
 
 Defines the products the installer will deploy. Each product is defined by a unique name and a set of properties. For instance, the following snippet defines a `productName` block:
 
 ```yaml
 ---
-tssc:
+tsf:
   products:
     productName:
       enabled: true
@@ -157,37 +157,37 @@ developerHub:
 
 The dependency order and namespace is based on the products enabled in the cluster configuration, please consider the [topology](docs/topology.md) document for more details.
 
-# Installing `tssc`
+# Installing `tsf`
 
 ## Pre-Compiled Binaries
 
 Check the lastest release from the [releases page][releases] and download the binary for your operating system and executable architecture. Then, either use the binary directly or move it to a directory in your `PATH`, for instance:
 
 ```bash
-install --mode=755 bin/tssc /usr/local/bin
+install --mode=755 bin/tsf /usr/local/bin
 ```
 
 ## From Source
 
-Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) for more information on building the project from source requirements. Then, follow the steps below to install the `tssc` binary from source:
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) for more information on building the project from source requirements. Then, follow the steps below to install the `tsf` binary from source:
 
-1. Clone [the repository](https://github.com/redhat-appstudio/tssc-cli.git), and navigate to the `tssc-cli` directory.
+1. Clone [the repository](https://github.com/redhat-appstudio/tsf-cli.git), and navigate to the `tsf-cli` directory.
 
 ```bash
-git clone --depth=1 https://github.com/redhat-appstudio/tssc-cli.git && \
-  cd tssc-cli
+git clone --depth=1 https://github.com/redhat-appstudio/tsf-cli.git && \
+  cd tsf-cli
 ```
 
-2. Run the command `make` from the `tssc-cli` directory, this will create a `bin` folder
+2. Run the command `make` from the `tsf-cli` directory, this will create a `bin` folder
 
 ```bash
 make
 ```
 
-3. Move the `tssc` to the desired location, for instance `/usr/local/bin`.
+3. Move the `tsf` to the desired location, for instance `/usr/local/bin`.
 
 ```bash
-install --mode=755 bin/tssc /usr/local/bin
+install --mode=755 bin/tsf /usr/local/bin
 ```
 
 # Contributing
@@ -195,5 +195,5 @@ install --mode=755 bin/tssc /usr/local/bin
 Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for more information on contributing to this project.
  
 [helm]: https://helm.sh/
-[releases]: https://github.com/redhat-appstudio/tssc-cli/releases
-[tsscCLI]: https://github.com/redhat-appstudio/tssc-cli
+[releases]: https://github.com/redhat-appstudio/tsf-cli/releases
+[tsfCLI]: https://github.com/redhat-appstudio/tsf-cli

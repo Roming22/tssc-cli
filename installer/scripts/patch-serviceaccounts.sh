@@ -15,7 +15,7 @@ Usage:
 
 Mandatory arguments:
 	--secret SECRET_NAME
-		Name of the secret to link to the ServiceAccount (e.g. 'tssc-image-registry-auth')
+		Name of the secret to link to the ServiceAccount (e.g. 'tsf-image-registry-auth')
     --serviceaccount SERVICEACCOUNT
         ServiceAccount to patch (e.g. 'pipeline')
 
@@ -26,7 +26,7 @@ Optional arguments:
         Display this message.
 
 Example:
-    ${0##*/} --secret tssc-image-registry-auth --serviceaccount pipeline
+    ${0##*/} --secret tsf-image-registry-auth --serviceaccount pipeline
 " >&2
 }
 
@@ -88,7 +88,7 @@ init() {
     SA_DEFINITION_UPDATED="$SA_DEFINITION.patch.yaml"
     [ -e "$SA_DEFINITION_UPDATED" ] && rm "$SA_DEFINITION_UPDATED"
 
-    SECRET_NAME="tssc-image-registry-auth"
+    SECRET_NAME="tsf-image-registry-auth"
 }
 
 cleanup() {

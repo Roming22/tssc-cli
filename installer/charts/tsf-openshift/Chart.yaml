@@ -1,0 +1,6 @@
+---
+apiVersion: v2
+name: tsf-openshift
+description: TSF OpenShift Projects
+type: application
+version: "1.8.0"

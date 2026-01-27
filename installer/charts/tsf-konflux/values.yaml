@@ -1,0 +1,5 @@
+---
+konflux:
+  namespace: konflux-ui
+  tsf:
+    namespace: __OVERWRITE_ME__
